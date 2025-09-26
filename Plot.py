@@ -29,28 +29,33 @@ def PlotTempVsTest(NoTests, SingleInsert, dataList, pydata, RunName, Path):
         print(f"An error occured: {e}")
     Path = Path + "/"
     initalPath = Path
+    
 
+    testeee = DataConversion.GetTestNames(pydata, dataList, SingleInsert)
 
-    temps = np.zeros((x))
     i = 0
     #add loop for temps here
     for c1 in numbTest:
         Path = initalPath
-        xName       = "Temperature"
-        for c2 in temps:
-            Title       = RunName + "_Temperature_Vs_"
-            yName       = ""
-            if(SingleInsert):
-                yName = (sheet1.cell(row=9, column=4+i)).internal_value
-            else:
-                yName = (sheet1.cell(row=9, column=3+i)).internal_value
-            Title = Title + yName
+        xName       = "Temp"
+        #for c2 in temps:
+        #    Title       = RunName + "_Temp_Vs_"
+        #    yName       = ""
+        #    if(SingleInsert):
+        #            yName = (sheet1.cell(row=9, column=4+i)).internal_value
+        #    else:
+        #        if((sheet1.cell(row=9, column=3+i)).internal_value != None):
+        #            yName = (sheet1.cell(row=9, column=3+i)).internal_value
+        #        else:
+        #            yName = (sheet1.cell(row=10, column=3+i)).internal_value
+        #    Title = Title + yName
+        Title = RunName + "_Temp_Vs_" + testeee[i]
 
         xyMaxMinYdata = GetLimits.GetLimits(dataList, SingleInsert, pydata, NoTests, i)
 
         #add plot function here
-        print("XXXXXxxxxxx start of New plot Function xxxxXXXXX")
-        print(i + 1)
+        print("\n\nXXXXXxxxxxx start of New plot Function xxxxXXXXX\n\n")
+        print(i)
        #print("newset of limits are")
        #print(xyMaxMinYdata[0])
        #print(xyMaxMinYdata[1])
@@ -70,7 +75,7 @@ def PlotTempVsTest(NoTests, SingleInsert, dataList, pydata, RunName, Path):
         plt.style.use('_mpl-gallery')
         with plt.style.context('dark_background'):
             plt.figure(figsize=(10,6))
-            plt.subplots_adjust(top=0.95, bottom=0.1, left=0.1, right=0.95)
+            plt.subplots_adjust(top=0.95, bottom=0.1, left=0.15, right=0.90)
             Titleformat = Title.replace(" ", "")
             Titleformat = Titleformat.replace(".", "")
             Titleformat = Titleformat.replace("/","")
@@ -82,21 +87,30 @@ def PlotTempVsTest(NoTests, SingleInsert, dataList, pydata, RunName, Path):
                #print(Path)
                 
             else:
-                Path = Path + "3_6V.png"
+                t = 1
+                while True:
+                    if(os.path.exists(Path + str(t) + ".png") == False):
+                        Path += str(t) 
+                        Path += ".png"
+                        break
+                    elif(t > 20):
+                        break
+                    t += 1
                #print("3.6V image made")
                #print(Path)
 
             #add CPK
             cpk = DataConversion.CPK(NoTests, SingleInsert, dataList, pydata, i)
             if(SingleInsert):
+                TempList = DataConversion.GetTemps(NoTests, dataList, pydata, i)
                 if(cpk[0] == "inf"):
-                    Title = Title + " 25 C CPK: " + "inf" + " -55C CPK: " + str(round(cpk[1], 2)) + " 85C CPK: " + str(round(cpk[2], 2))
+                    Title = Title + " " + TempList[0] + "C CPK: " + "inf " + TempList[1] + "C CPK: " + str(round(cpk[1], 2)) + " " + TempList[2] + "C CPK: " + str(round(cpk[2], 2))
                 elif(cpk[1] == "inf"):
-                    Title = Title + " 25 C CPK: " + str(round(cpk[0], 2)) + " -55C CPK: " + "inf" + " 85C CPK: " + str(round(cpk[2], 2))
+                    Title = Title + " " + TempList[0] + "C CPK: " + str(round(cpk[0], 2)) + " " + TempList[1] + "C CPK: " + "inf" + " " + TempList[2] + "C CPK: " + str(round(cpk[2], 2))
                 elif(cpk[2] == "inf"):
-                    Title = Title + " 25 C CPK: " + str(round(cpk[0], 2)) + " -55C CPK: " + str(round(cpk[1], 2)) + " 85C CPK: " + "inf"
+                    Title = Title + " " + TempList[0] + "C CPK: " + str(round(cpk[0], 2)) + " " + TempList[1] + "C CPK: " + str(round(cpk[1], 2)) + " " + TempList[2] + "C CPK: " + "inf"
                 else:
-                    Title = Title + " 25 C CPK: " + str(round(cpk[0], 2)) + " -55C CPK: " + str(round(cpk[1], 2)) + " 85C CPK: " + str(round(cpk[2], 2))
+                    Title = Title + " " + TempList[0] + "C CPK: " + str(round(cpk[0], 2)) + " " + TempList[1] + "C CPK: " + str(round(cpk[1], 2)) + " " + TempList[2] + "C CPK: " + str(round(cpk[2], 2))
             else:
                 if(cpk[0] == "inf"):
                     Title = Title + " 25 C CPK: " + "inf"
@@ -108,7 +122,7 @@ def PlotTempVsTest(NoTests, SingleInsert, dataList, pydata, RunName, Path):
             plt.xlim(xyMaxMinYdata[1], xyMaxMinYdata[0])
             plt.ylim(xyMaxMinYdata[3], xyMaxMinYdata[2])
             plt.xlabel(xName, fontsize = 12)  #Title, text size
-            plt.ylabel(yName, fontsize = 12)    #Title, text size
+            plt.ylabel(testeee[i], fontsize = 12)    #Title, text size
             plt.title(Title, fontsize = 15)
             if(SingleInsert):
                #print(dataList[start])
@@ -126,6 +140,8 @@ def PlotTempVsTest(NoTests, SingleInsert, dataList, pydata, RunName, Path):
                #print(i)
                #print(xxLineYmaxYmin[1]MinYdata[4])
                #print(dataList[i])
+                print("xLineYmaxYmin")
+                print(xLineYmaxYmin)
                 plt.plot(xyMaxMinYdata[4], dataList[i], 'gx', markeredgewidth=2)
                 plt.plot(xLineYmaxYmin[0], xLineYmaxYmin[1], color='darkred', linestyle='--', markeredgewidth=2)
                 plt.plot(xLineYmaxYmin[0], xLineYmaxYmin[2], color='aqua', linestyle='--', markeredgewidth=2)

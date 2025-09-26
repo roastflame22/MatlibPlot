@@ -3,6 +3,9 @@ import numpy as np
 import openpyxl
 import statistics
 
+import openpyxl.workbook
+import openfiles
+
 SingleInsert_test = 0
 xMaxLimit   = 000
 xMinLimit   = 999
@@ -31,11 +34,59 @@ def GethasTemp(pydata):
                 hasTemp = True
             i += 1
     return hasTemp
+def GetTemps(NoTests, datalist, pydata, i):
+    #print("pydata in get temps")
+    #print(pydata)
+    #grab worksheet
+    DataSheet = openpyxl.load_workbook(pydata, data_only=True)
+
+    #activate the sheet
+    sheet1 = DataSheet.active
+
+    Temps = ['empty', 'empty', 'empty']
+    Temps[0] = str((sheet1.cell(row=13, column=3)).internal_value - 2)
+    Temps[1] = str((sheet1.cell(row=13, column=3+NoTests)).internal_value - 2)
+    Temps[2] = str((sheet1.cell(row=13, column=3+(NoTests * 2))).internal_value - 2)
+        
+    #print("Temp List")
+    #print(Temps[0])
+    #print(Temps[1])
+    #print(Temps[2])
+    return Temps
+def GetTester(pydata):
+    TesterString = pydata.split("T")
+    Tester = "T" + TesterString[1]
+    #print("tester")
+    #print(Tester)
+    return Tester
+def GetSingleInsert(pydata, filenumber):
+    SingleInsert = False
+    Notemp = 0
+
+    #grab worksheet
+    DataSheet = openpyxl.load_workbook(pydata[filenumber], data_only=True)
+
+    #activate the sheet
+    sheet1 = DataSheet.active
+
+    i = 1
+    for tests in pydata[filenumber]: 
+        if((sheet1.cell(row=9,column=2+i)).internal_value != None):
+            title = (sheet1.cell(row=9,column=2+i)).internal_value
+            #print("title")
+            #print(title)
+            if(title == "Temperature"):
+                print("first Temp")
+                Notemp = Notemp + 1
+            i += 1
+    if(Notemp > 0):
+        SingleInsert = True
+    return SingleInsert
+
 def GetNoTests(pydata):
     x = 160
     i = 1
     firstTemp = True
-    foundNoTests = False
     hasTemp = False
     datalist = np.zeros(x)
     NoTests = np.zeros(len(pydata))
@@ -55,21 +106,46 @@ def GetNoTests(pydata):
                     #print("first Temp")
                     firstTemp = False
                     hasTemp = True
-                elif(title == "Temperature" and foundNoTests == False):
-
-                    foundNoTests = True
                     NoTests[currtest] = i
-                    #print("Notests")
-                    #print(NoTests)
-                    hasTemp = True
+               #    #print("Notests")
+               #    #print(NoTests)
                 else:
                     i += 1
         if(hasTemp == False):
             NoTests[currtest] = i
         firstTemp = True
-        foundNoTests = False
-        currtest += 1
+        currtest = currtest + 1
+        i = 1
     return NoTests
+
+def GetTestNames(pydata, data, SingleInsert):
+    DataSheet = openpyxl.load_workbook(pydata, data_only=True)
+    sheet1 = DataSheet.active
+    #print("GetTestNames")
+    #print("TestNames length = len(data) =" + str(len(data) / 3 - 1))
+    
+    if(SingleInsert):
+        TestNames = [" "] * int((len(data)/3 - 1))
+    else:
+        TestNames = [" "] * int((len(data)))
+    i = 0
+    for x in data:
+        #print("i")
+        #print(i)
+        if(SingleInsert):
+            if(i < len(data) / 3 - 1):
+                TestNames[i] = (sheet1.cell(row=9, column=4+i)).internal_value
+                #print(TestNames[i - 3])
+            else:
+                return TestNames
+        else:
+            if(i < len(data) & SingleInsert != True):
+                TestNames[i] = (sheet1.cell(row=9, column=3+i)).internal_value
+            else:
+                return TestNames
+        i += 1
+    return TestNames
+
 
 def Conversion(NoTests, SingleInsert, pydata):
     #grab worksheet
@@ -80,12 +156,21 @@ def Conversion(NoTests, SingleInsert, pydata):
     isTemp = False;
     if(SingleInsert):
         SingleInsert_test = NoTests * 3
-        x, y = SingleInsert_test, len(pydata)
-        a, b = SingleInsert_test, len(pydata)- 10
+        x = SingleInsert_test + 1
+        y = 256
+        a = SingleInsert_test + 1
+        b = 256
+       #x, y = SingleInsert_test, len(pydata)
+       #a, b = SingleInsert_test, len(pydata)- 10
     else:
         x, y = NoTests, len(pydata)
         a, b = NoTests, len(pydata)- 10
 #    x, y = NoTests, DataLength
+    #print("x, y , a, b")
+    #print(x)
+    #print(y)
+    #print(a)
+    #print(b)
     array2D = np.zeros((x,y))
     datalist = np.zeros((a,b))
 
@@ -101,11 +186,11 @@ def Conversion(NoTests, SingleInsert, pydata):
             rows = rows + 1
         cols = cols + 1
     
-    print("datalist")
-    print(datalist)
+    #print("datalist")
+    #print(datalist)
     shortList = shortenDatalist(datalist, pydata)
-    print("shortList")
-    print(shortList)
+    #print("shortList")
+    #print(shortList)
     return shortList
 
 def shortenDatalist(datalist, pydata):
@@ -154,7 +239,59 @@ def sigma_numpy(lower_bound, upper_bound, expression):
     numbers = np.arange(lower_bound, upper_bound + 1)
     return np.sum(expression(numbers))
 
+def GageRnR(Tester, data, pydata):
+    print("entering GageRnR data conversion")
+    #print(data)
+   ##create the sheet
+    dataSheet = openpyxl.Workbook()
+
+    #activate the sheet
+    sheet1 = dataSheet.active
+
+    basePath = openfiles.askdirectory() + "/"
+    paths = [""] * len(data[0])
+    print("data[0][0]")
+    print(data[0][0])
+    DUTNumber = len(data[0][0])
+
+    TesterCounter   = 0
+    Cols            = 0
+    Rows            = 0
+    DUT             = 0
+    i = 0
+    for Tests in data[0]:
+        for datapoint in data[0][0]:
+            if((sheet1.cell(row=9, column=3+i)).internal_value != None):
+                yName = (sheet1.cell(row=9, column=3+i)).internal_value
+            else:
+                yName = "wasnull"
+            path = basePath + yName + ".csv"
+            paths[i] = path
+            GaugeFile = open(path)
+            GaugeFile.write(Tester[TesterCounter] + ";" + Rows + ";" + data[Tester[TesterCounter],Cols,Rows * DUT])
+            if(DUT > DUTNumber * DUTNumber - DUTNumber - 1):
+                DUT = 0
+                Rows += 1
+            else:
+                DUT = DUT + DUTNumber
+        TesterCounter += 1
+        Rows = len(data[0][0])
+        for datapoint in data[0][0]:
+            GaugeFile.write(Tester[TesterCounter] + ";" + Rows + ";" + data[Tester[TesterCounter],Cols,(Rows / 2) * DUT ])
+            if(DUT > DUTNumber * DUTNumber - DUTNumber - 1):
+                DUT = 0
+                Rows += 1
+            else:
+                DUT = DUT + DUTNumber
+        Cols += 1
+
+
+    return paths
+
 def CPK(NoTests, SingleInsert, dataList, pydata, i):
+    print("CPK block")
+    print("NoTests")
+    print(NoTests)
     #grab worksheet
     DataSheet = openpyxl.load_workbook(pydata, data_only=True)
 
@@ -197,55 +334,55 @@ def CPK(NoTests, SingleInsert, dataList, pydata, i):
 
         print("datalist for sigma for calculations")
         if(SingleInsert):
-            print(dataList[start + i + 1])
+            #print(dataList[start + i + 1])
             sigma = np.std(dataList[start + i + 1])
             mean  = np.mean(dataList[start + i + 1])
         else:
-            print(dataList[start + i])
+            #print(dataList[start + i])
             sigma = np.std(dataList[start + i])
             mean  = np.mean(dataList[start + i])
-        print("sigma and mean")
-        print(sigma)
-        print(mean)
-        print("ymax ymin")
-        print(yMaxLimit)
-        print(yMinLimit)
+        #print("sigma and mean")
+        #print(sigma)
+        #print(mean)
+        #print("ymax ymin")
+        #print(yMaxLimit)
+        #print(yMinLimit)
         if(SingleInsert):
             if((sheet1.cell(row=14,column=4+start+i)).internal_value != None and (sheet1.cell(row=13,column=4+start+i)).internal_value != None): 
                 if(yMinLimit != "none"):
-                    print("Cpl")
+                    #print("Cpl")
                     Cpl = (mean - yMinLimit) / (3 * sigma)
-                    print(Cpl)
+                    #print(Cpl)
                 else:
-                    Cpl = (mean - 0) / (3 * sigma)
+                    Cpl = 9999
                 if(yMaxLimit != "none"):
-                    print("Cpu")
+                    #print("Cpu")
                     Cpu = (yMaxLimit - mean) / (3 * sigma)
-                    print(Cpu)
+                    #print(Cpu)
                 else:
-                    Cpu = (yMinLimit * 2 - mean) / (3 * sigma)
+                    Cpu = 9999
                 Cpk[y] = min(abs(Cpu),abs(Cpl))
                 start = start + NoTests
                 y += 1
         else:
             if(yMinLimit != "none"):
-                print("Cpl")
+                #print("Cpl")
                 Cpl = (mean - yMinLimit) / (3 * sigma)
-                print(Cpl)
+                #print(Cpl)
             else:
                 Cpl = (mean - 0) / (3 * sigma)
             if(yMaxLimit != "none"):
-                print("Cpu")
+                #print("Cpu")
                 Cpu = (yMaxLimit - mean) / (3 * sigma)
-                print(Cpu)
+                #print(Cpu)
             else:
                 Cpu = (yMinLimit * 2 - mean) / (3 * sigma)
             Cpk[y] = min(abs(Cpu),abs(Cpl))
             start = start + NoTests
             y += 1
 
-    print("Cpk")
-    print(Cpk)
+    #print("Cpk")
+    #print(Cpk)
     return Cpk
 
 
@@ -323,22 +460,22 @@ def GetLimitPlot(dataList, SingleInsert, pydata, NoTests, i, limits):
     h = 0
     xMax = limits[0]
     xMin = limits[1]
-    xLine = np.zeros((len(dataList[0])))
-    yMax = np.zeros((len(dataList[0])))
-    yMin = np.zeros((len(dataList[0])))
+    xLine = np.zeros((40))
+    yMax = np.zeros((40))
+    yMin = np.zeros((40))
     #print("xMax[2]: ")
     #print(xMax)
     #print("xMin[1]: ")
     #print(xMin)
 
     if(SingleInsert):
-        stepSize = (xMax[2] - xMin[1]) / len(dataList[0])
-        #print("stepsize")
-        #print(stepSize)
-        #print("starting point")
-        #print(xMin[1] - stepSize * 1.2)
+        stepSize = (xMax[2] - xMin[1]) / 40
+        print("stepsize")
+        print(stepSize)
+        print("starting point")
+        print(xMin[1] - stepSize * 1.2)
 
-        for data in dataList[0]:
+        for data in xLine:
             if(xLine[0] == 0):
                 xLine[0] = int(xMin[1] * 1.2)
                 yMax[h] = limits[2][1]
@@ -355,9 +492,8 @@ def GetLimitPlot(dataList, SingleInsert, pydata, NoTests, i, limits):
                 xLine[h] = xLine[h-1] + stepSize * 2
                 yMax[h] = limits[2][2]
                 yMin[h] = limits[3][2]
+            #print("xLine" + str(xLine[h]))
             h += 1
-        xLineYmaxYmin = [xLine, yMax, yMin]
-        return xLineYmaxYmin
     else:
         stepSize = (27 - 23) / len(dataList[0])
         #print("stepsize")
@@ -375,3 +511,5 @@ def GetLimitPlot(dataList, SingleInsert, pydata, NoTests, i, limits):
                 yMax[h] = limits[2][0]
                 yMin[h] = limits[3][0]
             h += 1
+    xLineYmaxYmin = [xLine, yMax, yMin]
+    return xLineYmaxYmin

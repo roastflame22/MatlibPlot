@@ -42,14 +42,14 @@ class GUIshell():
         label4 = tk.Label(window, text="Want to quit?")
         quitbutton = tk.Button(window, text="Quit?", command=close_window)
 
-        label1.grid(row=0, column=0)
-        test_entry.grid(row=0,column=1)
-        label2.grid(row=1,column=0)
-        file_entry.grid(row=1,column=1)
-        label3.grid(row=2,column=0)
-        tempSelection.grid(row = 2,column= 1)
-        label4.grid(row=3,column=0)
-        quitbutton.grid(row=3,column=1)
+        #label1.grid(row=0, column=0)
+        #test_entry.grid(row=0,column=1)
+        label2.grid(row=0,column=0)
+        file_entry.grid(row=0,column=1)
+        label3.grid(row=1,column=0)
+        tempSelection.grid(row = 1,column= 1)
+        label4.grid(row=2,column=0)
+        quitbutton.grid(row=2,column=1)
 
         def testfileName(testfileName):
             global testfile

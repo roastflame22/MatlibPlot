@@ -12,7 +12,39 @@ def open_file_dialog():
     root.lift()
     root.focus_set()
     file_path = filedialog.askopenfilenames()
+    #print("file_path:")
+    #print(file_path)
     return file_path
+def open_directory_dialog(FileName):
+    root.withdraw()
+    root.lift()
+    root.focus_set()
+    file_path = filedialog.askdirectory() + FileName + ".csv"
+    return file_path
+def askdirectory():
+    root.withdraw()
+    root.lift()
+    root.focus_set()
+    filedirectory = filedialog.askdirectory()
+    return filedirectory 
+def makeDirectory(FileName):
+
+    rootPath = askdirectory()
+    Directory = rootPath + "/" + FileName
+    Path = Directory + "/" + FileName
+    #print(f"makeDirectory FileName  is: {FileName}")
+    #print(f"makeDirectory directory is: {Directory}")
+    #print(f"makeDirectory root path is: {rootPath}")
+    #print(f"makeDirectory Path      is: {Path}")
+    try:
+        os.mkdir(Directory)
+        print(f"Directory '{Directory}' created successfully")
+    except FileExistsError:
+        print(f"Directory '{Directory}' already exists")
+    except OSError as e:
+        print(f"Error creating directory: {e}")
+    return Path
+
 def csv_to_xlsx_openpyxl(csv_file_path, currfile):
     xlsx_file_path = csv_file_path[currfile].split('.')
     xlsx_file_path[1] = '.xlsx'
